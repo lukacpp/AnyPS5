@@ -8,6 +8,7 @@ import statistics
 import subprocess
 import sys
 import tempfile
+from fractions import Fraction
 from pathlib import Path
 
 
@@ -126,7 +127,7 @@ def summarize(samples, max_spread_pct):
     values = [sample["fps"] for sample in samples]
     if not values:
         raise ValueError("no FPS samples were collected")
-    median = statistics.median(values)
+    median = float(statistics.median(Fraction(str(value)) for value in values))
     spread_pct = (max(values) - min(values)) / median * 100 if median else math.inf
     if spread_pct > max_spread_pct:
         raise ValueError(f"measurement spread {spread_pct:.2f}% exceeds the {max_spread_pct:.2f}% limit")
@@ -137,7 +138,8 @@ def summarize(samples, max_spread_pct):
 
 
 def is_regression(fps, baseline_fps, threshold_pct):
-    return fps <= baseline_fps * (1 - threshold_pct / 100)
+    cutoff = Fraction(str(baseline_fps)) * (1 - Fraction(str(threshold_pct)) / 100)
+    return Fraction(str(fps)) <= cutoff
 
 
 def require_same_identity(baseline, measured):

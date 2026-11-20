@@ -864,6 +864,14 @@ class GitFailureAndExitTests(unittest.TestCase):
     def test_regression_is_inclusive_at_the_exact_threshold(self):
         self.assertTrue(performance_bisect.is_regression(54, 60, 10))
         self.assertFalse(performance_bisect.is_regression(54.01, 60, 10))
+        self.assertTrue(performance_bisect.is_regression(136.8, 144, 5))
+        self.assertFalse(performance_bisect.is_regression(math.nextafter(136.8, math.inf), 144, 5))
+
+    def test_even_sample_median_at_the_slowdown_threshold(self):
+        samples = [{"fps": value, "identity": IDENTITY} for value in (135.8, 135.8, 135.9, 135.9)]
+        result = performance_bisect.summarize(samples, 3)
+        self.assertEqual(result["median_fps"], 135.85)
+        self.assertTrue(performance_bisect.is_regression(result["median_fps"], 143, 5))
 
     def test_main_exits_with_status_2_for_a_missing_recipe_file(self):
         from contextlib import redirect_stderr
